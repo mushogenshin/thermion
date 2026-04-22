@@ -97,7 +97,7 @@ On web this means:
 
 ### Diagnostics
 
-`_onFrame` wraps each frame in a `Stopwatch` and logs `[DART] 120-frame avg/max/jank/drop` at 120-frame intervals. A frame > 20ms counts as jank; a vsync that arrives while `_rendering` is still `true` counts as a drop. In port mode (debug), port transit latency is measured separately and logged when it exceeds 2ms.
+`_onFrame` wraps each frame in a `Stopwatch` and logs at 120-frame intervals. A frame > 20ms counts as jank; a vsync that arrives while `_rendering` is still `true` counts as a drop. In port mode (debug), port transit latency is measured separately and logged when it exceeds 2ms.
 
 ## Linux
 
