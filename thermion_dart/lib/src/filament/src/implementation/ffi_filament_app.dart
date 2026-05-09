@@ -256,6 +256,30 @@ class FFIFilamentApp extends FilamentApp<Pointer> {
     _logger.info("Destroying swapchain");
     await renderManager.detachAll(swapChain);
 
+    // Drain Filament's command stream before releasing the SwapChain.
+    //
+    // Filament's command stream queues `beginFrame` / `render` / `endFrame`
+    // to the driver thread; the C++ Engine::destroy(SwapChain*) is a
+    // separate call on the API thread that immediately releases the C++
+    // object. If a frame's `endFrame` is still pending in the driver
+    // queue when destroy fires, Filament asserts at Renderer.cpp:490 —
+    // "SwapChain must remain valid until endFrame is called." — and the
+    // process aborts with SIGABRT.
+    //
+    // On macOS / iOS / Windows the surface lifecycle gives us enough
+    // time for the queue to drain naturally before any caller invokes
+    // destroy. On Android, Flutter's SurfaceTextureEntry resize dance
+    // can fire a destroy while a render is mid-flight, reproducing the
+    // assertion on every viewer mount (including thermion's own
+    // `examples/flutter/quickstart` example, both emulator and physical
+    // device, ARM64).
+    //
+    // `flushAndWait` blocks until the driver has finished every command
+    // submitted up to this point, including any in-flight `endFrame`
+    // referencing this swapchain. It's a heavy call but acceptable on
+    // a destroy path that already implies the surface is going away.
+    await flush();
+
     await withVoidCallback((requestId, callback) {
       Engine_destroySwapChainRenderThread(
           engine, swapChain.getNativeHandle(), requestId, callback);
