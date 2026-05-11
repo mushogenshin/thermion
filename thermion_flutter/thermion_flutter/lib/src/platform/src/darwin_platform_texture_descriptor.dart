@@ -14,10 +14,19 @@ class DarwinPlatformTextureDescriptorImpl extends PlatformTextureDescriptor {
 
   @override
   Future destroy() async {
+    // Idempotent: a second destroy() is a no-op rather than a throw.
+    // Reason: the widget's `_allocateTexture` !mounted-branch calls
+    // texture.destroy() on its in-flight texture; if the viewer's own
+    // teardown path already destroyed it (e.g. when a multi-viewer
+    // screen is popped while allocation is in progress), the throw
+    // would propagate up through `setState()` and crash the Dart VM
+    // (an FFI callback firing after Dart-side cleanup). Idempotency
+    // makes the lifecycle race safe — see also the equivalent
+    // Windows path which doesn't throw on double-destroy.
     if (_destroyed) {
-      throw Exception();
+      return;
     }
-    // set flag early to ensure markTextureFrameAvailable is not called 
+    // set flag early to ensure markTextureFrameAvailable is not called
     // with a destroyed texture handle
     _destroyed = true;
     SwiftThermionFlutterPluginObjCAPI
