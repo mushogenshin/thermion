@@ -34,17 +34,15 @@ dev_dependencies:
 
 flutter:
   plugin:
+    # Downstream-restricted: this branch (kineograph-desktop-only) declares
+    # only macOS + Windows so Flutter's plugin discovery skips Thermion
+    # native code on iOS / Android / Linux builds. Kineograph uses a
+    # WebView + Three.js path on mobile and doesn't need Filament native
+    # libs in the IPA / APK. The canonical multi-platform branch keeps
+    # android / ios / linux entries — see the fork's other branches.
     platforms:
-      android:
-        pluginClass: ThermionFlutterPlugin
-        package: dev.thermion.android
-      ios:
-        pluginClass: SwiftThermionFlutterPlugin
-        sharedDarwinSource: true
       macos:
         pluginClass: SwiftThermionFlutterPlugin
         sharedDarwinSource: true
       windows:
         pluginClass: ThermionFlutterPluginCApi
-      linux:
-        pluginClass: ThermionFlutterPlugin
