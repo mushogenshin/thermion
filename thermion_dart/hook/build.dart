@@ -46,6 +46,28 @@ void main(List<String> args) async {
 
     final targetOS = config.code.targetOS;
 
+    // Kineograph downstream-restriction: skip the native build on Linux.
+    //
+    // The companion `kineograph-desktop-only` fork branch strips Linux
+    // from `thermion_flutter`'s `flutter.plugin.platforms`, so a Linux
+    // build never links the resulting native lib at runtime. But the
+    // build hook is per-package (thermion_dart, not thermion_flutter),
+    // so Flutter's plugin-platform discovery doesn't gate it.
+    //
+    // Without this early return, Linux CI runners (Ubuntu) try to
+    // clang-compile `native/src/**` with `-stdlib=libc++` and fail
+    // because `libc++-dev` isn't installed on a stock GitHub runner.
+    // Even if it were, building a Filament native lib we'll never ship
+    // is wasted work — Kineograph targets macOS + Windows on desktop,
+    // not Linux.
+    if (targetOS == OS.linux) {
+      logger.info(
+        "kineograph-desktop-only: skipping native build for Linux "
+        "(downstream targets macOS + Windows on desktop).",
+      );
+      return;
+    }
+
     final targetArchitecture = config.code.targetArchitecture;
 
     logger.info("""
